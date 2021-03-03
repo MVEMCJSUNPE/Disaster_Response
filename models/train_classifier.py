@@ -1,29 +1,56 @@
 import sys
 import pandas as pd
 from sqlalchemy import create_engine
+import joblib
 
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report
+from sklearn.base import BaseEstimator, TransformerMixin
 
 from nltk.tokenize import word_tokenizer
+from nltk.stem.wordnet import WordNetLemmatizer
 from nltk.stem import PorterStemmer
+
+# nltk.download("punkt")
+# nltk.download("stopwords")
+# nltk.download("wordnet")
 
 
 def load_data(database_filepath: str):
+    """
+    Loads data from database file database_filepath
+    Parameters:
+        database_filepath: path of database file to load data from
+    Returns:
+        Tuple consisting of 
+    """
     engine = create_engine("sqlite:///" + database_filepath)
     df: pd.DataFrame = pd.read_sql_table("messages", "sqlite:///" + database_filepath)
 
-    category_colnames = df.columns
-    return df['message'], 
+    category_colnames = df.drop().columns
+    X = df["message"]
+    Y = df.drop(["message", "original", "genre"], axis = 1)
+
+    return X, Y, Y.columns
 
 
 def tokenize(text: str):
+    """
+    Tokenizes a document
+    Parameters
+        text: document to tokenize
+    """
     tokens = word_tokenize(re.sub(r"\W", " ", text.lower()).strip())
 
     lemmatizer = WordNetLemmatizer()
-    return [ lemmatizer.lemmatize(token) for token in tokens ]
+    stemmer = PorterStemmer()
+    return [ stemmer.stem(lemmatizer.lemmatize(token)) for token in tokens if token not in stopwords.words("english") ]
 
 
 def build_model():
+    """
+    Builds machine-learning model
+    """
     pipeline = Pipeline([
         ("vec", TfidfVectorizer(tokenizer = tokenize)),
         ("clf", MultiOutputClassifier(estimator = RandomForestClassifier()))
@@ -42,13 +69,30 @@ def build_model():
 
 
 def evaluate_model(model, X_test, Y_test, category_names):
+    """
+    Evaluates performance of machine-learning model
+    Parameters:
+        model: Machine-learning model to evaluate
+        X_test: Input testing data that the machine-learning model 
+                will be predicting on
+        Y_test: Testing data that the machine-learning model will
+                be evaluating its performance against
+        category_names: Category names that the machine-learning model will
+                        be predicting
+    """
     y_pred = model.predict(X_test)
 
-    print(classification_report(Y_test, y_pred))
+    print(classification_report(Y_test, y_pred, target_names = category_names))
 
 
 def save_model(model, model_filepath):
-    pass
+    """
+    Saves model to file model_filepath using joblib
+    Parameters:
+        model: Machine-learning model to save
+        model_filepath: path of file to save machine-learning model to
+    """
+    joblib.dump(model, model_filepath)
 
 
 def main():

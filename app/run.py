@@ -26,34 +26,51 @@ def tokenize(text):
     return clean_tokens
 
 # load data
-engine = create_engine('sqlite:///../data/YourDatabaseName.db')
-df = pd.read_sql_table('YourTableName', engine)
+engine = create_engine('sqlite:///../data/DisasterResponse.db')
+df = pd.read_sql_table('messages', engine)
 
 # load model
-model = joblib.load("../models/your_model_name.pkl")
+model = joblib.load("../models/classifier.pkl")
 
 
 # index webpage displays cool visuals and receives user input text for model
 @app.route('/')
 @app.route('/index')
 def index():
-    
+
     # extract data needed for visuals
     # TODO: Below is an example - modify to extract data for your own visuals
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
-    
+
+    cat_hist = df.drop(["message", "original", "genre"], axis = 1).sum(axis = 1)
+
     # create visuals
     # TODO: Below is an example - modify to create your own visuals
     graphs = [
         {
-            'data': [
+            "data": [
                 Bar(
-                    x=genre_names,
-                    y=genre_counts
+                    x = cat_hist.index,
+                    y = cat_hist.values
                 )
             ],
-
+            "layout": {
+                "title": "Distribution of Categories",
+                "yaxis": {
+                    "title": "Count"
+                },
+                "xaxis": {
+                    "title": "Categories"
+                }
+        },
+        {
+            'data': [
+                Bar(
+                    x = genre_names,
+                    y = genre_counts
+                )
+            ],
             'layout': {
                 'title': 'Distribution of Message Genres',
                 'yaxis': {
@@ -65,13 +82,13 @@ def index():
             }
         }
     ]
-    
+
     # encode plotly graphs in JSON
     ids = ["graph-{}".format(i) for i, _ in enumerate(graphs)]
     graphJSON = json.dumps(graphs, cls=plotly.utils.PlotlyJSONEncoder)
-    
+
     # render web page with plotly graphs
-    return render_template('master.html', ids=ids, graphJSON=graphJSON)
+    return render_template('master.html', ids = ids, graphJSON = graphJSON)
 
 
 # web page that handles user query and displays model results
@@ -88,12 +105,12 @@ def go():
     return render_template(
         'go.html',
         query=query,
-        classification_result=classification_results
+        classification_result = classification_results
     )
 
 
 def main():
-    app.run(host='0.0.0.0', port=3001, debug=True)
+    app.run(host = '0.0.0.0', port = 3001, debug = True)
 
 
 if __name__ == '__main__':

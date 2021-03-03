@@ -23,15 +23,19 @@ def load_data(messages_filepath: str, categories_filepath: str) -> pd.DataFrame:
 
 
 def clean_data(df: pd.DataFrame):
+    """
+    Cleans data by dropping duplicates. Most of data cleaning
+    is actually done in load_data
+    """
     return df.drop_duplicates()
 
 
 def save_data(df: pd.DataFrame, database_filename: str):
     """
-    Saves data to from df to database_filename
+    Saves data to from the DataFrame df to sqlite database file database_filename
     Parameters:
         df: DataFrame to save
-        database_filename: name of database to save to
+        database_filename: name of sqlite database file to save to
     """
 
     engine = create_engine("sqlite:///" + database_filename)

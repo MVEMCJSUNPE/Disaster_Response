@@ -13,17 +13,9 @@ def load_data(messages_filepath: str, categories_filepath: str) -> pd.DataFrame:
     messages = pd.read_csv(messages_filepath, index_col = "id")
     categories = pd.read_csv(categories_filepath, index_col = "id")
 
-    categories_intermed = categories["categories"].str.get_dummies(";")
-    categories_colnames = set( col[ : -2] for col in categories.columns )
+    categories = categories["categories"].str.get_dummies(";").filter(regex = r"[a-zA-Z_]+-0") ^ 1
 
-    categories = category_intermed.filter(regex = r"[a-zA-Z_]+-1")
-
-    # Loop to add in all categories that are 0
-    for col in categories_colnames:
-        if col not in categories.columns:
-            categories[col + "-1"] = 0
-
-    categories.rename(columns = lambda col: col[ : col.index("-1")], inplace = True)
+    categories.rename(columns = lambda col: col[ : col.index("-0")], inplace = True)
 
     df = pd.merge(messages, categories, on = "id")
 
@@ -35,7 +27,14 @@ def clean_data(df: pd.DataFrame):
 
 
 def save_data(df: pd.DataFrame, database_filename: str):
-    engine = create_engine(f"sqlite:///{database_filename}")
+    """
+    Saves data to from df to database_filename
+    Parameters:
+        df: DataFrame to save
+        database_filename: name of database to save to
+    """
+
+    engine = create_engine("sqlite:///" + database_filename)
     df.to_sql("messages", engine, index = False)
 
 

@@ -10,8 +10,8 @@ data/DisasterResponse.db: data/process_data.py $(DATA)
 
 .PHONY: web_app clean clean_model clean_db nltk
 
-web_app: run.py models/classifier.pkl data/DisasterResponse.db
-	$(PYCMD) run.py
+web_app: app/run.py # models/classifier.pkl data/DisasterResponse.db
+	$(PYCMD) app/run.py
 
 nltk:
 	$(PYCMD) -c "import nltk \

@@ -1,20 +1,26 @@
 import sys
 import pandas as pd
+import numpy as np
 from sqlalchemy import create_engine
 import joblib
+import re
 
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.multioutput import MultiOutputClassifier
+from sklearn.pipeline import Pipeline
 from sklearn.metrics import classification_report
-from sklearn.base import BaseEstimator, TransformerMixin
 
-from nltk.tokenize import word_tokenizer
+import nltk
+from nltk.tokenize import word_tokenize
 from nltk.stem.wordnet import WordNetLemmatizer
-from nltk.stem import PorterStemmer
+from nltk.stem.porter import PorterStemmer
+from nltk.corpus import stopwords
 
 # nltk.download("punkt")
 # nltk.download("stopwords")
 # nltk.download("wordnet")
-
 
 def load_data(database_filepath: str):
     """
@@ -27,9 +33,9 @@ def load_data(database_filepath: str):
     engine = create_engine("sqlite:///" + database_filepath)
     df: pd.DataFrame = pd.read_sql_table("messages", "sqlite:///" + database_filepath)
 
-    category_colnames = df.drop().columns
     X = df["message"]
     Y = df.drop(["message", "original", "genre"], axis = 1)
+    category_colnames = Y.columns
 
     return X, Y, Y.columns
 
@@ -59,13 +65,15 @@ def build_model():
     parameters = { 
             "vec__ngram_range": ((1, 1), (1, 2)),
             "vec__max_df": (0.5, 0.75, 1.0),
-            "vec__max_features": (None, 5000, 10000),
+            "vec__max_features": (None, 5000, 7500),
             "vec__use_idf": (True, False),
-            "clf__estimator__n_estimators": (5, 50, 100, 250, 700),
+            "clf__estimator__n_estimators": (5, 50, 100),
             "clf__estimator__max_features": ("sqrt", "log2"),
-            "clf__estimator__max_depth": (5, 8, 10)}
+            "clf__estimator__max_depth": (5, 8)}
 
-    cv = GridSearchCV(pipeline, grid_param = parameters)
+    cv = GridSearchCV(pipeline, param_grid = parameters, verbose = 10, cv = 3)
+
+    return cv
 
 
 def evaluate_model(model, X_test, Y_test, category_names):
@@ -82,7 +90,7 @@ def evaluate_model(model, X_test, Y_test, category_names):
     """
     y_pred = model.predict(X_test)
 
-    print(classification_report(Y_test, y_pred, target_names = category_names))
+    print(classification_report(Y_test, y_pred, target_names = category_names, labels = np.unique(y_pred)))
 
 
 def save_model(model, model_filepath):

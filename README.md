@@ -34,3 +34,11 @@ columns and 1. For the final step of the data cleaning process, columns were
 renamed by removing the "-0" at the end of each column and then merging
 the data from messages and the modified categories DataFrames.
 
+### How Imbalance Affects Training the Model
+Categories with many examples usually tend to have high precision and high
+recall, since any decent machine-learning model will just predict positive
+most of the time. As a result, there will tend to be many true positives,
+only a few false positives, and few false negatives, which is why the 
+precision and recall will be high. Categories with only a few
+examples, on the other hand, will have low precision and low recall, since
+they have few true positives, false positives, and few true negatives.
